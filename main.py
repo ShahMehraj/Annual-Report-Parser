@@ -68,7 +68,18 @@ def user_input(user_question):
 
 def main():
     st.set_page_config("Chat PDF")
-    st.header("Annual Report Parser")
+    import streamlit as st
+
+# Custom Header
+st.markdown(
+    """
+    <h1 style='color: #3498db; font-size: 40px; text-align: center;'>
+        Chat with Your PDFs 🤖
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
+
 
     user_question = st.text_input("Ask a Question from the PDF Files")
 
