@@ -7,3 +7,4 @@ chromadb
 faiss-cpu
 bs4
 langchain_community
+langchain_google_genai
