@@ -9,3 +9,4 @@ bs4
 langchain_community
 langchain_google_genai
 openpyxl
+pandas
