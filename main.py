@@ -68,11 +68,7 @@ def user_input(user_question):
 
 def main():
     st.set_page_config("Chat PDF")
-    import streamlit as st
-
-
-    st.header("Extract Financial Data from Annual Reports")
-
+    st.header("Chat with multiple PDF using Gemini💁")
 
     user_question = st.text_input("Ask a Question from the PDF Files")
 
