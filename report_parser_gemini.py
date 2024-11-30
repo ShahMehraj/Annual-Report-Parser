@@ -10,6 +10,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import pandas as pd
+from io import StringIO
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -17,10 +18,9 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def get_pdf_text(pdf_docs):
     text = ""
-    for pdf in pdf_docs:
-        pdf_reader = PdfReader(pdf)
-        for page in pdf_reader.pages:
-            text += page.extract_text()
+    pdf_reader = PdfReader(pdf_docs)
+    for page in pdf_reader.pages:
+        text += page.extract_text()
     return text
 
 
@@ -89,44 +89,56 @@ def main():
         pdf_docs = st.file_uploader("Upload your Annual Reports (PDF Files)", accept_multiple_files=True)
         if st.button("Submit & Process"):
             with st.spinner("Processing..."):
-                raw_text = get_pdf_text(pdf_docs)
-                text_chunks = get_text_chunks(raw_text)
-                get_vector_store(text_chunks)
-
                 for pdf in pdf_docs:
-                    extracted_data = process_pdf_and_extract_data(user_question)
-                    st.session_state["data"].append(extracted_data)
+                    raw_text = get_pdf_text(pdf)
+                    text_chunks = get_text_chunks(raw_text)
+                    get_vector_store(text_chunks)
 
+                    extracted_data = process_pdf_and_extract_data(user_question)
+                    if extracted_data not in st.session_state['data']:
+                        st.session_state['data'].append(extracted_data)
+
+                # file = open('data.txt', 'w')
+                # for data in st.session_state['data']:
+                #     file.write(data)
                 st.success("Processing complete! Financial data extracted.")
 
     if st.button("Generate Excel File"):
         if st.session_state["data"]:
-            # Combine all extracted data into a dataframe
-            df_list = []
-            for data in st.session_state["data"]:
-                try:
-                    # Parse extracted data into structured rows
-                    rows = [line.split("|")[1:-1] for line in data.split("\n") if "|" in line]
-                    columns = ["company_code", "business_segment", "currency", "revenue"]
-                    df = pd.DataFrame(rows, columns=columns)
-                    df_list.append(df)
-                except Exception as e:
-                    st.error(f"Error parsing extracted data: {e}")
+            frames = [pd.read_csv(StringIO(d.strip()), sep="|", skipinitialspace=True).iloc[1:] for d in st.session_state["data"]]
+            result_df = pd.concat(frames, ignore_index=True)
+            # Clean up column names and remove leading/trailing whitespace from values
+            result_df.columns = [col.strip() for col in result_df.columns]
+            result_df = result_df.map(lambda x: x.strip() if isinstance(x, str) else x)
+            result_df = result_df.iloc[:, 1:5]
+            # # Combine all extracted data into a dataframe
+            # df_list = []
+            # for data in st.session_state["data"]:
+            #     try:
+            #         # Parse extracted data into structured rows
+            #         rows = [line.split("|")[1:-1] for line in data.split("\n") if "|" in line]
+            #         columns = ["company_code", "business_segment", "currency", "revenue"]
+            #         df = pd.DataFrame(rows, columns=columns)
+            #         df_list.append(df)
+            #     except Exception as e:
+            #         st.error(f"Error parsing extracted data: {e}")
 
-            if df_list:
-                final_df = pd.concat(df_list, ignore_index=True)
-                # Save to Excel
-                excel_path = "financial_data.xlsx"
-                final_df.to_excel(excel_path, index=False)
-                st.success("Excel file generated successfully!")
-                st.download_button(
-                    label="Download Excel File",
-                    data=open(excel_path, "rb").read(),
-                    file_name="financial_data.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
-            else:
-                st.error("No data to save. Please ensure the extraction process was successful.")
+            # if df_list:
+            #     final_df = pd.concat(df_list, ignore_index=True)
+            #     final_df = final_df[final_df['company_code'] != ' company_name ']
+            #     final_df = final_df[final_df['company_code'] != '---']
+            #     # Save to Excel
+            excel_path = "financial_data.xlsx"
+            result_df.to_excel(excel_path, index=False)
+            st.success("Excel file generated successfully!")
+            st.download_button(
+                label="Download Excel File",
+                data=open(excel_path, "rb").read(),
+                file_name="financial_data.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            # else:
+            #     st.error("No data to save. Please ensure the extraction process was successful.")
         else:
             st.error("No data available. Please process the PDFs first.")
 
