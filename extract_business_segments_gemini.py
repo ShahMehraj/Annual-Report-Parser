@@ -38,23 +38,37 @@ def get_vector_store(text_chunks):
 
 def get_conversational_chain():
     prompt_template = """
-    Extract the following details from the provided context:
-    - Company name
-    - Business segment (various operations a company drawa its revenue from)
-    - Currency
-    - Revenue
-
-    Output the information in the format:
-    | company_name | business_segment              | currency | revenue |
-    If the answer is not in the context, return "Not Available". 
-
-    Context:
+    Extract the following details from the provided context. Focus on operational activities or product categories for business segments, and avoid listing geographical regions unless no other information is available:
+    1. **Company Name**: The official name of the company.
+    2. **Business Segments and Revenue**: List the various major operational activities or product categories that the company generates revenue from, along with the corresponding revenue for each segment. Avoid using geographical regions like "Americas" or "Europe" unless no specific business segments are available. For example:
+    - For Apple Inc:
+        - iPhone: $120 billion
+        - Mac: $35 billion
+        - iPad: $29 billion
+        - Services: $80 billion
+    - For Microsoft:
+        - Software: $60 billion
+        - Cloud Services: $70 billion
+        - Gaming: $20 billion
+    - For Abbott:
+        - Established Pharmaceutical Products: $5.1 billion
+        - Nutritional Products: $8.2 billion
+        - Diagnostic Products: $10.0 billion
+        - Medical Devices: $16.9 billion
+    3. **Currency**: The currency in which the company reports its financials.
+    
+    If any of these details are not explicitly available in the context, respond with "Not Available."
+    
+    ### Context:
     {context}
     
-    Question:
-    "Provide the financial details as mentioned above."
-
-    Answer:
+    ### Question:
+    "Provide the financial details as mentioned above, including revenue corresponding to each business segment."
+    
+    ### Answer Format:
+    Output the information in the format:
+    | company_name | business_segment              | currency | revenue |
+    If the answer is not in the context, return "Not Available."
     """
 
     model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
