@@ -57,7 +57,7 @@ def get_conversational_chain():
         - Medical Devices: $16.9 billion
     3. **Currency**: The currency in which the company reports its financials.
     
-    If any of these details are not explicitly available in the context, respond with "Not Available."
+    Search all tables also. If any of these details are not explicitly available in the context, respond with "Not Available."
     
     ### Context:
     {context}
@@ -68,7 +68,7 @@ def get_conversational_chain():
     ### Answer Format:
     Output the information in the format:
     | company_name | business_segment              | currency | revenue |
-    If the answer is not in the context, return "Not Available."
+    # If the answer is not in the context, return "Not Available."
     """
 
     model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
